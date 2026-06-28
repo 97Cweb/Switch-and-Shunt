@@ -1,0 +1,14 @@
+[tool.basedpyright]
+typeCheckingMode = "standard"
+include = ["source"]
+
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+
+venvPath = "."
+venv = "venv"
+
+[tool.ruff]
+line-length = 100
