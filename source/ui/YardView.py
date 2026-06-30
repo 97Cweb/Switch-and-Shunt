@@ -3,6 +3,10 @@ from PySide6 import QtCore, QtWidgets, QtGui
 class YardView(QtWidgets.QGraphicsView):
     def __init__(self, scene):
         super().__init__(scene)
+
+        self.middle_mouse_dragging = False
+        self.last_mouse_pos = None
+
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
@@ -66,4 +70,41 @@ class YardView(QtWidgets.QGraphicsView):
 
     def mousePressEvent(self, event):
         self.setFocus()
+
+        if event.button() == QtCore.Qt.MiddleButton:
+            self.middle_mouse_dragging = True
+            self.last_mouse_pos = event.position()
+            self.setCursor(QtCore.Qt.ClosedHandCursor)
+            event.accept()
+            return
+
         super().mousePressEvent(event)
+
+
+    def mouseMoveEvent(self, event):
+        if self.middle_mouse_dragging and self.last_mouse_pos is not None:
+            delta = event.position() - self.last_mouse_pos
+            self.last_mouse_pos = event.position()
+
+            self.horizontalScrollBar().setValue(
+                self.horizontalScrollBar().value() - int(delta.x())
+            )
+            self.verticalScrollBar().setValue(
+                self.verticalScrollBar().value() - int(delta.y())
+            )
+
+            event.accept()
+            return
+
+        super().mouseMoveEvent(event)
+
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.MiddleButton:
+            self.middle_mouse_dragging = False
+            self.last_mouse_pos = None
+            self.setCursor(QtCore.Qt.ArrowCursor)
+            event.accept()
+            return
+
+        super().mouseReleaseEvent(event)

@@ -1,7 +1,18 @@
 from dataclasses import dataclass
+from math import cos, sin, tan, radians
+
+from source.logic.types import Float, Point
+
 
 type NodeId = str
 type PortId = str
+
+def point_from_angle(origin: Point, angle_degrees: Float, distance: Float) -> Point:
+    a = radians(angle_degrees)
+    return Point(
+        origin.x + distance * cos(a),
+        origin.y + distance * sin(a),
+    )
 
 
 @dataclass(frozen=True)
@@ -11,23 +22,15 @@ class PortRef:
 
 
 @dataclass(frozen=True)
-class Point:
-    x: float
-    y: float
-
-
-@dataclass(frozen=True)
-class TrackGeometry:
-    points: tuple[Point, ...]
-
-
-@dataclass(frozen=True)
 class Track:
     id: str
     a: PortRef
     b: PortRef
-    geometry: TrackGeometry | None = None
 
+@dataclass(frozen=True)
+class PortGeometry:
+    point: Point
+    angle: Float
 
 @dataclass(frozen=True)
 class NodeRoute:
@@ -35,15 +38,12 @@ class NodeRoute:
     a: PortId
     b: PortId
 
-
 @dataclass
-class Node:
+class TrackNode:
     id: NodeId
     name: str
-
-
-@dataclass
-class TrackNode(Node):
+    centre: Point
+    rotation_degrees: Float
     routes: tuple[NodeRoute, ...]
     current_position: str
 
@@ -66,23 +66,109 @@ class TrackNode(Node):
                 return True
         return False
 
+    def port_geometries(self, loading_gauge: Float) -> dict[PortId, PortGeometry]:
+        raise NotImplementedError
+
+    def port_geometry(self, port_id: PortId, loading_gauge: Float) -> PortGeometry:
+        ports = self.port_geometries(loading_gauge)
+
+        if port_id not in ports:
+            raise ValueError(f"{self.name} has no port {port_id}")
+
+        return ports[port_id]
+
+    def port_point(self, port_id: PortId, loading_gauge: Float) -> Point:
+        geometry = self.port_geometry(port_id, loading_gauge)
+        return self.transform_local_point(geometry.point)
+
+    def port_angle(self, port_id: PortId, loading_gauge: Float) -> Float:
+        geometry = self.port_geometry(port_id, loading_gauge)
+        return self.rotation_degrees + geometry.angle
+
+    def transform_local_point(self, point: Point) -> Point:
+        angle = radians(self.rotation_degrees)
+
+        x = point.x * cos(angle) - point.y * sin(angle)
+        y = point.x * sin(angle) + point.y * cos(angle)
+
+        return Point(
+            self.centre.x + x,
+            self.centre.y + y,
+        )
+
 
 @dataclass
 class BufferNode(TrackNode):
-    def __init__(self, id: NodeId, name: str) -> None:
+    def __init__(self, id: NodeId, name: str, centre: Point, rotation_degrees: Float) -> None:
         super().__init__(
             id=id,
             name=name,
+            centre=centre,
+            rotation_degrees=rotation_degrees,
             routes=(NodeRoute("blocked", "end", "__null__"),),
             current_position="blocked",
         )
 
+    def port_geometries(self, loading_gauge: Float) -> dict[PortId, PortGeometry]:
+        return {
+            "end": PortGeometry(Point(-loading_gauge / 2.0, 0.0), 180.0),
+        }
+
 
 class ExitNode(TrackNode):
-    def __init__(self, id: NodeId, name: str) -> None:
+    def __init__(self, id: NodeId, name: str, centre: Point, rotation_degrees: Float) -> None:
         super().__init__(
             id=id,
             name=name,
+            centre=centre,
+            rotation_degrees=rotation_degrees,
             routes=(NodeRoute("exit", "exit", "__exit__"),),
             current_position="exit",
         )
+    def port_geometries(self, loading_gauge: Float) -> dict[PortId, PortGeometry]:
+        return {
+            "exit": PortGeometry(Point(-loading_gauge / 2.0, 0.0), 180.0),
+        }
+
+@dataclass
+class SwitchNode(TrackNode):
+    diverging_degrees: Float = 20.0
+
+    def port_geometries(self, loading_gauge: Float) -> dict[PortId, PortGeometry]:
+        angle = abs(self.diverging_degrees)
+
+        if angle == 0:
+            length = loading_gauge * 2.0
+        else:
+            length = loading_gauge / tan(radians(angle))
+
+        half = length / 2.0
+
+        straight = Point(half, 0.0)
+        root = Point(-half, 0.0)
+        diverging = point_from_angle(
+            Point(0.0, 0.0),
+            self.diverging_degrees,
+            half,
+        )
+
+        return {
+            "root": PortGeometry(root, 180.0),
+            "straight": PortGeometry(straight, 0.0),
+            "diverging": PortGeometry(diverging, self.diverging_degrees),
+        }
+
+    
+
+
+@dataclass
+class Yard:
+    nodes: dict[NodeId, TrackNode]
+    tracks: dict[str, Track]
+    loading_gauge: Float = 40.0
+
+    def drawable_tracks(self) -> tuple[Track, ...]:
+        return tuple(self.tracks.values())
+
+    def drawable_track_nodes(self) -> tuple[TrackNode, ...]:
+        return tuple(self.nodes.values())
