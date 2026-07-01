@@ -12,9 +12,13 @@ class RollingStock:
     length: Float
     empty_mass: Float
     condition: Float
+    handbrake: bool
+
 
     rolling_resistance: Float
-    max_brake_force: Float
+    automatic_brake_force: Float
+    max_automatic_brake_force: Float
+    handbrake_force: Float
 
     brake_pipe_volume: Float
     brake_pipe_pressure: Float
@@ -58,16 +62,28 @@ class Tender(RollingStock):
 class Locomotive(RollingStock):
     tractive_effort: Float
     tender: Tender | None = None
+    independent_brake_force: Float = 0.0
+    max_independent_brake_force: Float = 0.0
 
 
 @dataclass
 class Connection:
     a: RollingStock | None = None
     b: RollingStock | None = None
+    brake_hose_connected: bool = False
+    angle_cock_a_open: bool = False
+    angle_cock_b_open: bool = False
 
     @property
     def can_uncouple(self) -> bool:
         return False
+
+    @property brake_pipe_continuous(self) -> bool:
+        return (
+            self.brake_hose_connected
+            and self.angle_cock_a_open
+            and self.angle_cock_b_open
+        )
 
 
 @dataclass
