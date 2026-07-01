@@ -11,6 +11,7 @@ class RollingStock:
     name: str
     length: Float
     empty_mass: Float
+    condition: Float
 
     rolling_resistance: Float
     max_brake_force: Float
