@@ -39,13 +39,17 @@ class GameWidget(QtWidgets.QWidget):
         yard = self.yard
         self.scene.clear()
         self.scene.setSceneRect(0, 0, 1000, 600)
+        bg = self.palette().color(QtGui.QPalette.ColorRole.Base)
 
-        track_pen = QtGui.QPen(QtCore.Qt.black)
+        active_col = QtCore.Qt.black
+        inactive_col = bg.darker(135)
+
+        track_pen = QtGui.QPen(active_col)
         track_pen.setWidth(self.track_width)
         track_pen.setCapStyle(QtCore.Qt.RoundCap)
         track_pen.setJoinStyle(QtCore.Qt.RoundJoin)
 
-        inactive_route_pen = QtGui.QPen(QtCore.Qt.darkGray)
+        inactive_route_pen = QtGui.QPen(inactive_col)
         inactive_route_pen.setWidth(self.track_width)
         inactive_route_pen.setJoinStyle(QtCore.Qt.RoundJoin)
 
