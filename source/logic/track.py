@@ -7,6 +7,7 @@ from source.logic.types import Float, Point
 type NodeId = str
 type PortId = str
 
+
 def point_from_angle(origin: Point, angle_degrees: Float, distance: Float) -> Point:
     a = radians(angle_degrees)
     return Point(
@@ -27,16 +28,19 @@ class Track:
     a: PortRef
     b: PortRef
 
+
 @dataclass(frozen=True)
 class PortGeometry:
     point: Point
     angle: Float
+
 
 @dataclass(frozen=True)
 class NodeRoute:
     position: str
     a: PortId
     b: PortId
+
 
 @dataclass
 class TrackNode:
@@ -46,6 +50,16 @@ class TrackNode:
     rotation_degrees: Float
     routes: tuple[NodeRoute, ...]
     current_position: str
+
+    def positions_ordered(self) -> tuple[str, ...]:
+        ordered = []
+        for route in self.routes:
+            if route.position not in ordered:
+                ordered.append(route.position)
+        return tuple(ordered)
+
+    def get_num_positions(self):
+        return len(self.positions_ordered())
 
     def active_routes(self) -> tuple[NodeRoute, ...]:
         return tuple(route for route in self.routes if route.position == self.current_position)
@@ -111,7 +125,7 @@ class BufferNode(TrackNode):
 
     def port_geometries(self, loading_gauge: Float) -> dict[PortId, PortGeometry]:
         return {
-            "end": PortGeometry(Point(-loading_gauge / 2.0, 0.0), 180.0),
+            "end": PortGeometry(Point(0.0, 0.0), 180.0),
         }
 
 
@@ -125,10 +139,12 @@ class ExitNode(TrackNode):
             routes=(NodeRoute("exit", "exit", "__exit__"),),
             current_position="exit",
         )
+
     def port_geometries(self, loading_gauge: Float) -> dict[PortId, PortGeometry]:
         return {
-            "exit": PortGeometry(Point(-loading_gauge / 2.0, 0.0), 180.0),
+            "exit": PortGeometry(Point(0.0, 0.0), 180.0),
         }
+
 
 @dataclass
 class SwitchNode(TrackNode):
@@ -157,8 +173,6 @@ class SwitchNode(TrackNode):
             "straight": PortGeometry(straight, 0.0),
             "diverging": PortGeometry(diverging, self.diverging_degrees),
         }
-
-    
 
 
 @dataclass

@@ -1,4 +1,4 @@
-import math
+from math import cos, radians
 from PySide6 import QtCore, QtWidgets, QtGui
 
 from source.logic.track import TrackNode
@@ -46,7 +46,6 @@ class GameWidget(QtWidgets.QWidget):
 
         track_pen = QtGui.QPen(active_col)
         track_pen.setWidth(self.track_width)
-        track_pen.setCapStyle(QtCore.Qt.RoundCap)
         track_pen.setJoinStyle(QtCore.Qt.RoundJoin)
 
         inactive_route_pen = QtGui.QPen(inactive_col)
@@ -73,32 +72,65 @@ class GameWidget(QtWidgets.QWidget):
             self.draw_node_routes(node, active_route_pen, active_only=True)
 
         for node in yard.drawable_track_nodes():
-            r = yard.loading_gauge / 2.0
+            if node.get_num_positions() > 1:
+                r = yard.loading_gauge / 2.0
 
-            self.scene.addEllipse(
-                node.centre.x - r,
-                node.centre.y - r,
-                r * 2.0,
-                r * 2.0,
-                node_pen,
-                node_brush,
-            )
+                self.scene.addEllipse(
+                    node.centre.x - r,
+                    node.centre.y - r,
+                    r * 2.0,
+                    r * 2.0,
+                    node_pen,
+                    node_brush,
+                )
 
-            # Bigger invisible click target, especially nice once the drawing gets dense.
-            hit_r = r * 1.35
-            hit_item = self.scene.addEllipse(
-                node.centre.x - hit_r,
-                node.centre.y - hit_r,
-                hit_r * 2.0,
-                hit_r * 2.0,
-                QtGui.QPen(QtCore.Qt.NoPen),
-                hit_brush,
-            )
-            positions = self.position_order(node)
-            if len(positions) > 1:
+                # Bigger invisible click target, especially nice once the drawing gets dense.
+                hit_r = r * 1.35
+                hit_item = self.scene.addEllipse(
+                    node.centre.x - hit_r,
+                    node.centre.y - hit_r,
+                    hit_r * 2.0,
+                    hit_r * 2.0,
+                    QtGui.QPen(QtCore.Qt.NoPen),
+                    hit_brush,
+                )
                 hit_item.setData(0, node.id)
                 hit_item.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
                 hit_item.setCursor(QtCore.Qt.PointingHandCursor)
+
+            elif node.routes[0].position == "blocked":
+                line = QtCore.QLineF(
+                    QtCore.QPointF(0, -yard.loading_gauge / 2),
+                    QtCore.QPointF(0, yard.loading_gauge / 2),
+                )
+                transform = QtGui.QTransform()
+                transform.translate(node.centre.x, node.centre.y)
+                transform.rotate(node.rotation_degrees)
+
+                line = transform.map(line)
+
+                self.scene.addLine(line, track_pen)
+
+            elif node.routes[0].position == "exit":
+                triangle_length = self.track_width * 2
+                triangle_half_height = self.track_width
+                triangle = QtGui.QPolygonF(
+                    [
+                        QtCore.QPointF(-triangle_length / 3, -triangle_half_height),
+                        QtCore.QPointF(triangle_length * 2 / 3, 0),
+                        QtCore.QPointF(-triangle_length / 3, triangle_half_height),
+                    ]
+                )
+                transform = QtGui.QTransform()
+                transform.translate(node.centre.x, node.centre.y)  # move to node
+                transform.rotate(node.rotation_degrees)
+
+                transform.translate(self.track_width * 2, 0)  # give spacing from end of track
+                triangle = transform.map(triangle)
+
+                self.scene.addPolygon(
+                    triangle, QtGui.QPen(QtCore.Qt.darkGreen), QtGui.QBrush(QtCore.Qt.darkGreen)
+                )
 
     def draw_tracks(self, yard, pen: QtGui.QPen) -> None:
 
@@ -155,21 +187,14 @@ class GameWidget(QtWidgets.QWidget):
         if self.yard is None:
             return
         node = self.yard.nodes[node_id]
-        positions = self.position_order(node)
+        positions = node.positions_ordered()
 
-        if len(positions) <= 1:
+        if node.get_num_positions() <= 1:
             return
         current_index = positions.index(node.current_position)
         next_index = (current_index + 1) % len(positions)
         node.set_position(positions[next_index])
         self.draw_yard()
-
-    def position_order(self, node: TrackNode) -> tuple[str, ...]:
-        ordered = []
-        for route in node.routes:
-            if route.position not in ordered:
-                ordered.append(route.position)
-        return tuple(ordered)
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
