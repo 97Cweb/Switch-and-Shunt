@@ -1,5 +1,4 @@
 from __future__ import annotations
-from _typeshed import DataclassInstance
 from dataclasses import dataclass, field
 
 from source.logic.types import Float
@@ -12,25 +11,57 @@ class RollingStock:
     name: str
     length: Float
     empty_mass: Float
-    condition: Float
-    handbrake: bool
 
     rolling_resistance: Float
-    automatic_brake_force: Float
-    max_automatic_brake_force: Float
-    handbrake_force: Float
 
-    brake_pipe_volume: Float
-    brake_pipe_pressure: Float
+    max_handbrake_force: Float
 
     front_connection: Connection
     rear_connection: Connection
+
+    brakes: BrakeEquipment | None = None
+    steam: SteamEquipment | None = None
+    electrical: ElectricalEquipment | None = None
+    mu: MUEquipment | None = None
 
     trucks: list[Truck] = field(default_factory=list)
 
     @property
     def mass(self) -> Float:
         return self.empty_mass
+
+
+@dataclass
+class RollingStockState:
+    stock: RollingStock
+    condition: Float
+    handbrake_force: Float
+
+    track_id: str
+
+    distance: Float = 0.0
+    velocity: Float = 0.0
+    acceleration: Float = 0.0
+
+    brakes: BrakeState | None = None
+    steam: SteamState | None = None
+    electrical: ElectricalState | None = None
+    mu: MUState | None = None
+
+    applied_force: Float = 0.0
+
+    def __post_init__(self):
+        if self.stock.brakes is not None and self.brakes is None:
+            self.brakes = BrakeState()
+
+        if self.stock.steam is not None and self.steam is None:
+            self.steam = SteamState()
+
+        if self.stock.electrical is not None and self.electrical is None:
+            self.electrical = ElectricalState()
+
+        if self.stock.mu is not None and self.mu is None:
+            self.mu = MUState()
 
 
 @dataclass
@@ -69,31 +100,84 @@ class Locomotive(RollingStock):
 
 
 @dataclass
+class CarEquipment:
+    pass
+
+
+@dataclass
+class CarEquipmentState:
+    pass
+
+
+@dataclass
 class ServiceConnection:
     connected: bool = False
 
 
 @dataclass
-class BrakeLine(ServiceConnection):
+class BrakeEquipment(CarEquipment):
+    max_brake_force: Float = 0.0
+    brake_pipe_volume: Float = 0.0
+    reservoir_size: Float = 0.0
+
+
+@dataclass
+class BrakeState(CarEquipmentState):
+    brake_pipe_pressure: Float = 0.0
+    brake_force: Float = 0.0
+
+
+@dataclass
+class BrakeConnection(ServiceConnection):
     valve_a_open: bool = False
     valve_b_open: bool = False
 
 
 @dataclass
-class SteamLine(ServiceConnection):
+class SteamEquipment(CarEquipment):
+    max_pressure: Float
+
+
+@dataclass
+class SteamState(CarEquipmentState):
+    pressure: Float = 0.0
+
+
+@dataclass
+class SteamConnection(ServiceConnection):
     valve_a_open: bool = False
     valve_b_open: bool = False
 
 
 @dataclass
-class ElectricalJumper(ServiceConnection):
+class ElectricalEquipment(CarEquipment):
+    max_voltage: Float
+
+
+@dataclass
+class ElectricalState(CarEquipmentState):
     voltage: Float = 0.0
     breaker_closed: bool = False
 
 
 @dataclass
-class MUJumper(ServiceConnection):
-    connected: bool = False
+class ElectricalConnection(ServiceConnection):
+    pass
+
+
+@dataclass
+class MUEquipment(CarEquipment):
+    pass
+
+
+@dataclass
+class MUState(CarEquipmentState):
+    pass
+
+
+@dataclass
+class MUConnection(ServiceConnection):
+    pass
 
 
 @dataclass
@@ -106,10 +190,10 @@ class Connection:
     max_compression_force: Float = 0.0
     a_knuckle_open: bool = True  # whether connections are open. knuckle open or not
     b_knucle_open: bool = True  # whether connections are open. knuckle open or not
-    brakeline: BrakeLine | None = None
-    steam: SteamLine | None = None
-    electrical: ElectricalJumper | None = None
-    mu: MUJumper | None = None
+    brakeline: BrakeConnection | None = None
+    steam: SteamConnection | None = None
+    electrical: ElectricalConnection | None = None
+    mu: MUConnection | None = None
 
     @property
     def can_uncouple(self) -> bool:
