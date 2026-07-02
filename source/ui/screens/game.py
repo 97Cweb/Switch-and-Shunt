@@ -1,13 +1,12 @@
-from math import cos, radians
 from PySide6 import QtCore, QtWidgets, QtGui
 
-from source.logic.track import TrackNode
-from source.ui.drawing import DrawingHelpers
-from source.ui.YardView import YardView
-from source.logic.track_test import make_test_yard
+from source.objects.track import TrackNode
+from source.ui.rendering.drawing import DrawingHelpers
+from source.ui.views.yard_view import YardView
+from source.tests.track_test import make_test_yard
 
 
-class GameWidget(QtWidgets.QWidget):
+class Game(QtWidgets.QWidget):
     back_to_menu = QtCore.Signal()
 
     def __init__(self):

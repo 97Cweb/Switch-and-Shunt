@@ -1,5 +1,5 @@
-from source.logic.rolling_stock import RollingStockState
-from source.logic.types import Float
+from source.objects.rolling_stock import RollingStockState
+from source.shared.types import Float
 
 
 def sign(value: Float) -> int:
@@ -11,6 +11,8 @@ def sign(value: Float) -> int:
 
 
 def update_rolling_stock(state: RollingStockState, dt: Float) -> None:
+    if state.is_derailed:
+        return
     stock = state.stock
 
     force = state.applied_force

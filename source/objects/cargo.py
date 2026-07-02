@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from source.logic.types import Float
+from source.shared.types import Float
 
 
 @dataclass

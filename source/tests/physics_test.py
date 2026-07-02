@@ -1,6 +1,6 @@
-from source.logic.physics import update_rolling_stock
+from source.simulation.physics import update_rolling_stock
 
-from source.logic.rolling_stock import RollingStock, RollingStockState, Coupler
+from source.objects.rolling_stock import RollingStock, RollingStockState, Coupler
 
 
 def make_test_car_state() -> RollingStockState:

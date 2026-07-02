@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from math import cos, sin, tan, radians
 
-from source.logic.types import Float, Point
+from source.shared.types import Float, Point
 
 
 type NodeId = str
@@ -186,3 +186,14 @@ class Yard:
 
     def drawable_track_nodes(self) -> tuple[TrackNode, ...]:
         return tuple(self.nodes.values())
+
+    def track_length(self, track_id: str) -> Float:
+        track = self.tracks[track_id]
+
+        a_node = self.nodes[track.a.node_id]
+        b_node = self.nodes[track.b.node_id]
+
+        a_point = a_node.port_point(track.a.port_id, self.loading_gauge)
+        b_point = b_node.port_point(track.b.port_id, self.loading_gauge)
+
+        return distance_between(a_point, b_point)

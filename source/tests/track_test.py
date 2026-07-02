@@ -1,4 +1,4 @@
-from source.logic.track import (
+from source.objects.track import (
     NodeRoute,
     SwitchNode,
     BufferNode,

@@ -1,8 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 
-from source.logic.types import Float
-from source.logic.cargo import Cargo
+from source.shared.types import Float
+from source.objects.cargo import Cargo
 
 
 @dataclass
@@ -42,6 +42,7 @@ class RollingStockState:
     distance: Float = 0.0
     velocity: Float = 0.0
     acceleration: Float = 0.0
+    is_derailed: bool = False
 
     brakes: BrakeState | None = None
     steam: SteamState | None = None
