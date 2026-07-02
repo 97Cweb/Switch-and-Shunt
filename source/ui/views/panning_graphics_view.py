@@ -1,7 +1,7 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 
 
-class YardView(QtWidgets.QGraphicsView):
+class PanningGraphicsView(QtWidgets.QGraphicsView):
     node_clicked = QtCore.Signal(str)
 
     def __init__(self, scene):

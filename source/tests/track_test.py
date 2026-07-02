@@ -1,13 +1,12 @@
-from source.objects.track import (
+from source.objects.node import (
     NodeRoute,
     SwitchNode,
     BufferNode,
     ExitNode,
-    PortRef,
-    Track,
     Point,
-    Yard,
 )
+from source.objects.track import PortRef, Track
+from source.objects.yard import Yard
 
 
 def make_test_yard() -> Yard:
