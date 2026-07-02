@@ -23,7 +23,7 @@ class Yard:
 
         return get_bezier_length_from_points_and_angles(*self.get_track_poss_and_angles(track_id))
 
-    def get_track_poss_and_angles(self, track_id: str) -> tuple:
+    def get_track_geometry(self, track_id: str) -> tuple:
 
         track = self.tracks[track_id]
 

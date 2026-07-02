@@ -97,7 +97,7 @@ class Node:
             self.centre.y + y,
         )
 
-    def get_route_poss_and_angles(self, route: NodeRoute, loading_gauge: Float):
+    def get_route_geometry(self, route: NodeRoute, loading_gauge: Float):
         a_pos = self.port_point(route.a, loading_gauge)
         b_pos = self.port_point(route.b, loading_gauge)
 

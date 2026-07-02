@@ -29,7 +29,7 @@ class NodeItem(QtWidgets.QGraphicsItemGroup):
             self.add_route(node, route, yard.loading_gauge, pens["active_route_pen"])
 
     def add_route(self, node, route, loading_gauge, pen):
-        path = DrawingHelpers.get_bezier_path(*node.get_route_poss_and_angles(route, loading_gauge))
+        path = DrawingHelpers.get_bezier_path(*node.get_route_geometry(route, loading_gauge))
 
         route_item = QtWidgets.QGraphicsPathItem(path)
         route_item.setPen(pen)
