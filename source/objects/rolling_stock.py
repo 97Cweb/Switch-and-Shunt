@@ -243,7 +243,6 @@ class Truck:
 class TruckState:
     truck: Truck
     truck_position: TruckPosition | None = None
-    distance: Float = 0.0
     velocity: Float = 0.0
     acceleration: Float = 0.0
     is_derailed: bool = False

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from source.objects.node import NodeId
+from source.objects.node import NodeId, PortId
 from source.shared.types import Float
 
 
@@ -13,6 +13,7 @@ class TrackPosition:
 @dataclass(frozen=True)
 class NodePosition:
     node_id: NodeId
+    entered_from_port_id: PortId
     distance_along: Float
 
 

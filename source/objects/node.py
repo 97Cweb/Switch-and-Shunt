@@ -34,6 +34,7 @@ class Node:
     id: NodeId
     name: str
     centre: Point
+    altitude: Float
     rotation_degrees: Float
     routes: tuple[NodeRoute, ...]
     current_position: str
@@ -73,6 +74,12 @@ class Node:
                 return route.b
             if route.b == from_port:
                 return route.a
+        return None
+
+    def active_route_from_port(self, port_id: PortId) -> NodeRoute | None:
+        for route in self.active_routes():
+            if route.a == port_id or route.b == port_id:
+                return route
         return None
 
     def port_geometries(self, loading_gauge: Float) -> dict[PortId, PortGeometry]:
@@ -117,11 +124,14 @@ class Node:
 
 @dataclass
 class BufferNode(Node):
-    def __init__(self, id: NodeId, name: str, centre: Point, rotation_degrees: Float) -> None:
+    def __init__(
+        self, id: NodeId, name: str, centre: Point, altitude: Float, rotation_degrees: Float
+    ) -> None:
         super().__init__(
             id=id,
             name=name,
             centre=centre,
+            altitude=altitude,
             rotation_degrees=rotation_degrees,
             routes=(NodeRoute("blocked", "end", "__null__"),),
             current_position="blocked",
@@ -134,11 +144,14 @@ class BufferNode(Node):
 
 
 class ExitNode(Node):
-    def __init__(self, id: NodeId, name: str, centre: Point, rotation_degrees: Float) -> None:
+    def __init__(
+        self, id: NodeId, name: str, centre: Point, altitude: Float, rotation_degrees: Float
+    ) -> None:
         super().__init__(
             id=id,
             name=name,
             centre=centre,
+            altitude=altitude,
             rotation_degrees=rotation_degrees,
             routes=(NodeRoute("exit", "exit", "__exit__"),),
             current_position="exit",

@@ -1,5 +1,6 @@
+from source.tests import physics_test, truck_test
 from source.ui.main import main
-from source.tests.physics_test import test_all
 
-# test_all()
-main()
+# physics_test.test_all()
+truck_test.test_all()
+# main()
