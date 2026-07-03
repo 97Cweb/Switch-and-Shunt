@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from source.objects.track import NodeId, Track
-from source.objects.node import Node
+from source.objects.node import Node, PortId
 from source.shared.geometry import get_bezier_length_from_points_and_angles
 from source.shared.types import Float
 
@@ -19,9 +19,39 @@ class Yard:
     def drawable_track_nodes(self) -> tuple[Node, ...]:
         return tuple(self.nodes.values())
 
+    def get_connected_track_id_from_port_id(self, node_id, port_id) -> str | None:
+        for track_id, track in self.tracks.items():
+            if track.a.node_id == node_id and track.a.port_id == port_id:
+                return track_id
+            elif track.b.node_id == node_id and track.b.port_id == port_id:
+                return track_id
+
+        return None
+
+    def next_track_from_boundary(self, track_id: str, at_end: str) -> str | None:
+        track = self.tracks[track_id]
+
+        if at_end == "a":
+            node_id = track.a.node_id
+            entered_port = track.a.port_id
+
+        elif at_end == "b":
+            node_id = track.b.node_id
+            entered_port = track.b.port_id
+
+        else:
+            raise ValueError(f"Invalid track end {at_end}")
+
+        node = self.nodes[node_id]
+        exit_port_id = node.next_port(entered_port)
+
+        if exit_port_id is None:
+            return None
+        return self.get_connected_track_id_from_port_id(node_id, exit_port_id)
+
     def track_length(self, track_id: str) -> Float:
 
-        return get_bezier_length_from_points_and_angles(*self.get_track_poss_and_angles(track_id))
+        return get_bezier_length_from_points_and_angles(*self.get_track_geometry(track_id))
 
     def get_track_geometry(self, track_id: str) -> tuple:
 

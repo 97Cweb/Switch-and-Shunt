@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 
+from source.objects.position import TruckPosition
 from source.shared.types import Float
 from source.objects.cargo import Cargo
 
@@ -34,15 +35,9 @@ class RollingStock:
 @dataclass
 class RollingStockState:
     stock: RollingStock
-    condition: Float
-    handbrake_force: Float
-
-    track_id: str
-
-    distance: Float = 0.0
-    velocity: Float = 0.0
-    acceleration: Float = 0.0
-    is_derailed: bool = False
+    trucks: list[TruckState] | None = None
+    condition: Float = 1.0
+    handbrake_force: Float = 0.0
 
     brakes: BrakeState | None = None
     steam: SteamState | None = None
@@ -50,6 +45,10 @@ class RollingStockState:
     mu: MUState | None = None
 
     applied_force: Float = 0.0
+
+    @classmethod
+    def from_stock(cls, stock: RollingStock) -> "RollingStockState":
+        return cls(stock=stock, trucks=[TruckState(truck) for truck in stock.trucks])
 
     def __post_init__(self):
         if self.stock.brakes is not None and self.brakes is None:
@@ -63,6 +62,9 @@ class RollingStockState:
 
         if self.stock.mu is not None and self.mu is None:
             self.mu = MUState()
+
+        if self.stock.trucks is not None and self.trucks is None:
+            self.trucks = [TruckState(truck=truck) for truck in self.stock.trucks]
 
 
 @dataclass
@@ -228,10 +230,20 @@ class FixedConnection(Connection):
 
 @dataclass
 class Truck:
-    offset: Float
+    offset_from_centre: Float
     wheelbase: Float
     axle_count: int
 
     can_swivel: bool = True
     swivel_angle: Float | None = None
     max_swivel_angle: Float | None = None
+
+
+@dataclass
+class TruckState:
+    truck: Truck
+    truck_position: TruckPosition | None = None
+    distance: Float = 0.0
+    velocity: Float = 0.0
+    acceleration: Float = 0.0
+    is_derailed: bool = False

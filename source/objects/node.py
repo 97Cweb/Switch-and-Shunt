@@ -67,6 +67,14 @@ class Node:
                 return True
         return False
 
+    def next_port(self, from_port: PortId) -> PortId | None:
+        for route in self.active_routes():
+            if route.a == from_port:
+                return route.b
+            if route.b == from_port:
+                return route.a
+        return None
+
     def port_geometries(self, loading_gauge: Float) -> dict[PortId, PortGeometry]:
         raise NotImplementedError
 
