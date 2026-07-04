@@ -1,7 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+from sqlite3 import Connection
 
-from source.objects.position import TruckPosition
+from source.objects.truck import Truck, TruckState
 from source.shared.types import Float
 from source.objects.cargo import Cargo
 
@@ -35,9 +36,11 @@ class RollingStock:
 @dataclass
 class RollingStockState:
     stock: RollingStock
-    trucks: list[TruckState] | None = None
+    trucks: list[TruckState] = field(default_factory=list)
     condition: Float = 1.0
     handbrake_force: Float = 0.0
+    velocity: Float = 0.0
+    acceleration: Float = 0.0
 
     brakes: BrakeState | None = None
     steam: SteamState | None = None
@@ -63,8 +66,12 @@ class RollingStockState:
         if self.stock.mu is not None and self.mu is None:
             self.mu = MUState()
 
-        if self.stock.trucks is not None and self.trucks is None:
+        if self.stock.trucks is not None and len(self.trucks) == 0:
             self.trucks = [TruckState(truck=truck) for truck in self.stock.trucks]
+
+    @property
+    def truck_count(self) -> int:
+        return len(self.trucks)
 
 
 @dataclass
@@ -96,6 +103,11 @@ class Tender(RollingStock):
 
 @dataclass
 class Locomotive(RollingStock):
+    fuel_mass: Float = 0.0
+    water_mass: Float = 0.0
+
+    max_fuel_mass: Float = 0.0
+    max_water_mass: Float = 0.0
     tractive_effort: Float = 0.0
     tender: Tender | None = None
     independent_brake_force: Float = 0.0
@@ -113,11 +125,6 @@ class CarEquipmentState:
 
 
 @dataclass
-class ServiceConnection:
-    connected: bool = False
-
-
-@dataclass
 class BrakeEquipment(CarEquipment):
     max_brake_force: Float = 0.0
     brake_pipe_volume: Float = 0.0
@@ -131,12 +138,6 @@ class BrakeState(CarEquipmentState):
 
 
 @dataclass
-class BrakeConnection(ServiceConnection):
-    valve_a_open: bool = False
-    valve_b_open: bool = False
-
-
-@dataclass
 class SteamEquipment(CarEquipment):
     max_pressure: Float
 
@@ -144,12 +145,6 @@ class SteamEquipment(CarEquipment):
 @dataclass
 class SteamState(CarEquipmentState):
     pressure: Float = 0.0
-
-
-@dataclass
-class SteamConnection(ServiceConnection):
-    valve_a_open: bool = False
-    valve_b_open: bool = False
 
 
 @dataclass
@@ -164,11 +159,6 @@ class ElectricalState(CarEquipmentState):
 
 
 @dataclass
-class ElectricalConnection(ServiceConnection):
-    pass
-
-
-@dataclass
 class MUEquipment(CarEquipment):
     pass
 
@@ -176,73 +166,3 @@ class MUEquipment(CarEquipment):
 @dataclass
 class MUState(CarEquipmentState):
     pass
-
-
-@dataclass
-class MUConnection(ServiceConnection):
-    pass
-
-
-@dataclass
-class Connection:
-    a: RollingStock | None = None
-    b: RollingStock | None = None
-    slack: Float = 0.025  # m
-    position: Float = 0.0
-    max_tension_force: Float = 0.0
-    max_compression_force: Float = 0.0
-    a_knuckle_open: bool = True  # whether connections are open. knuckle open or not
-    b_knucle_open: bool = True  # whether connections are open. knuckle open or not
-    brakeline: BrakeConnection | None = None
-    steam: SteamConnection | None = None
-    electrical: ElectricalConnection | None = None
-    mu: MUConnection | None = None
-
-    @property
-    def can_uncouple(self) -> bool:
-        return False
-
-    @property
-    def brake_pipe_continuous(self) -> bool:
-        if self.brakeline:
-            return (
-                self.brakeline.connected
-                and self.brakeline.valve_a_open
-                and self.brakeline.valve_b_open
-            )
-        else:
-            return False
-
-
-@dataclass
-class Coupler(Connection):
-    @property
-    def can_uncouple(self) -> bool:
-        return True
-
-
-@dataclass
-class FixedConnection(Connection):
-    @property
-    def can_uncouple(self) -> bool:
-        return False
-
-
-@dataclass
-class Truck:
-    offset_from_centre: Float
-    wheelbase: Float
-    axle_count: int
-
-    can_swivel: bool = True
-    swivel_angle: Float | None = None
-    max_swivel_angle: Float | None = None
-
-
-@dataclass
-class TruckState:
-    truck: Truck
-    truck_position: TruckPosition | None = None
-    velocity: Float = 0.0
-    acceleration: Float = 0.0
-    is_derailed: bool = False

@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 from source.objects.position import NodePosition, TrackPosition, TruckPosition
-from source.objects.rolling_stock import RollingStockState, TruckState
 from source.objects.track import NodeId, Track
 from source.objects.node import Node, PortId
+
 from source.shared.geometry import get_bezier_length_from_points_and_angles
 from source.shared.types import Float
 
@@ -79,98 +79,29 @@ class Yard:
             *node.get_route_geometry(route, self.loading_gauge)
         )
 
-    def move_truck_state(self, truck_state: TruckState, distance_delta: Float) -> None:
-        if truck_state.truck_position is None:
-            return
-        truck_state.truck_position = self.moved_truck_position(
-            truck_state.truck_position, distance_delta
-        )
+    def track_grade(self, track_id: str) -> Float:
+        track = self.tracks[track_id]
 
-    def moved_truck_position(
-        self, position: TruckPosition, distance_delta: Float
-    ) -> TruckPosition | None:
+        a_node = self.node[track.a.node_id]
+        b_node = self.nodes[track.b.node_id]
+
+        length = self.track_length(track_id)
+
+        if length == 0.0:
+            return 0.0
+
+        return (b_node.altitude - a_node.altitude) / length
+
+    def node_route_grade_from_port(self, node_id: NodeId, port_id: PortId) -> Float:
+
+        return 0.0
+
+    def grade_at_position(self, position: TruckPosition | None) -> Float:
+        if position is None:
+            return 0.0
         if isinstance(position, TrackPosition):
-            length = self.track_length(position.track_id)
-            new_distance = position.distance_along + distance_delta
-
-            if 0.0 <= new_distance <= length:
-                return TrackPosition(position.track_id, new_distance)
-
-            if new_distance > length:
-                track = self.tracks[position.track_id]
-
-                return NodePosition(
-                    node_id=track.b.node_id,
-                    entered_from_port_id=track.b.port_id,
-                    distance_along=new_distance - length,
-                )
-            if new_distance < 0.0:
-                track = self.tracks[position.track_id]
-
-                node_id = track.a.node_id
-                entered_port_id = track.a.port_id
-
-                route_length = self.node_route_length_from_port(node_id, entered_port_id)
-                if route_length is None:
-                    return None
-
-                return NodePosition(
-                    node_id=node_id,
-                    entered_from_port_id=entered_port_id,
-                    distance_along=route_length + new_distance,
-                )
+            return self.track_grade(position.track_id)
 
         if isinstance(position, NodePosition):
-            node = self.nodes[position.node_id]
-
-            route = node.active_route_from_port(position.entered_from_port_id)
-
-            if route is None:
-                return None
-
-            route_length = get_bezier_length_from_points_and_angles(
-                *node.get_route_geometry(route, self.loading_gauge)
-            )
-
-            new_distance = position.distance_along + distance_delta
-
-            if 0.0 <= new_distance <= route_length:
-                return NodePosition(
-                    node_id=position.node_id,
-                    entered_from_port_id=position.entered_from_port_id,
-                    distance_along=new_distance,
-                )
-
-            exit_port_id = node.next_port(position.entered_from_port_id)
-
-            if exit_port_id is None:
-                return None
-
-            next_track_id = self.get_connected_track_id_from_port_id(position.node_id, exit_port_id)
-            if next_track_id is None:
-                return None
-
-            if new_distance > route_length:
-                return TrackPosition(
-                    track_id=next_track_id, distance_along=new_distance - route_length
-                )
-
-            if new_distance < 0.0:
-                previous_track_id = self.get_connected_track_id_from_port_id(
-                    position.node_id, position.entered_from_port_id
-                )
-
-                if previous_track_id is None:
-                    return None
-
-                previous_track_length = self.track_length(previous_track_id)
-
-                return TrackPosition(
-                    track_id=previous_track_id, distance_along=previous_track_length + new_distance
-                )
-
-        return None
-
-    def move_rolling_stock_state(self, state: RollingStockState, distance_delta: Float) -> None:
-        for truck in state.trucks:
-            self.move_truck_state(truck, distance_delta=distance_delta)
+            return self.node_route_grade_from_port(position.node_id, position.entered_from_port_id)
+        return 0.0
