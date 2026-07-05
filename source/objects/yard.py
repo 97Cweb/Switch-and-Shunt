@@ -82,7 +82,7 @@ class Yard:
     def track_grade(self, track_id: str) -> Float:
         track = self.tracks[track_id]
 
-        a_node = self.node[track.a.node_id]
+        a_node = self.nodes[track.a.node_id]
         b_node = self.nodes[track.b.node_id]
 
         length = self.track_length(track_id)

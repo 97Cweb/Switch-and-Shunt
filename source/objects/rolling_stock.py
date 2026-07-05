@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from sqlite3 import Connection
 
+from source.objects.coupling import Coupling
 from source.objects.truck import Truck, TruckState
 from source.shared.types import Float
 from source.objects.cargo import Cargo
@@ -18,8 +18,8 @@ class RollingStock:
 
     max_handbrake_force: Float
 
-    front_connection: Connection
-    rear_connection: Connection
+    front_coupling: Coupling
+    rear_coupling: Coupling
 
     brakes: BrakeEquipment | None = None
     steam: SteamEquipment | None = None
@@ -106,6 +106,7 @@ class Locomotive(RollingStock):
     fuel_mass: Float = 0.0
     water_mass: Float = 0.0
 
+    air: AirEquipment | None = None
     max_fuel_mass: Float = 0.0
     max_water_mass: Float = 0.0
     tractive_effort: Float = 0.0
@@ -125,16 +126,41 @@ class CarEquipmentState:
 
 
 @dataclass
+class AirEquipment(CarEquipment):
+    max_air_pressure: Float = 0.0
+    atmos_volume_per_second_fill: Float = 0.0
+
+
+@dataclass
 class BrakeEquipment(CarEquipment):
     max_brake_force: Float = 0.0
     brake_pipe_volume: Float = 0.0
+
+
+@dataclass
+class AirBrakeEquipment(BrakeEquipment):
     reservoir_size: Float = 0.0
+
+
+@dataclass
+class StraightBrakeEquipment(BrakeEquipment):
+    pass
 
 
 @dataclass
 class BrakeState(CarEquipmentState):
     brake_pipe_pressure: Float = 0.0
     brake_force: Float = 0.0
+
+
+@dataclass
+class AirBrakeState(BrakeState):
+    pass
+
+
+@dataclass
+class StraightBrakeState(BrakeState):
+    pass
 
 
 @dataclass

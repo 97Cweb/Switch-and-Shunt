@@ -3,4 +3,5 @@ from source.ui.main import main
 
 # physics_test.test_all()
 truck_test.test_all()
+physics_test.test_all()
 # main()

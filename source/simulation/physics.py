@@ -5,7 +5,7 @@ from source.objects.yard import Yard
 from source.shared.types import Float
 
 from source.shared.geometry import get_bezier_length_from_points_and_angles
-from source.simulation.constants import GRAVITY
+from source.simulation.constants import BLOCKED_PORT, EXIT_PORT, GRAVITY
 
 
 def move_truck_state(yard: Yard, truck_state: TruckState, distance_delta: Float) -> None:
@@ -75,6 +75,19 @@ def moved_truck_position(
 
         if exit_port_id is None:
             return None
+
+        if exit_port_id == EXIT_PORT:
+            # todo validate train, remove train from yard, bounce otherwise
+
+            return None
+
+        if exit_port_id == BLOCKED_PORT:
+            # buffer, hard stop
+            return NodePosition(
+                node_id=position.node_id,
+                entered_from_port_id=position.entered_from_port_id,
+                distance_along=route_length,
+            )
 
         next_track_id = yard.get_connected_track_id_from_port_id(position.node_id, exit_port_id)
         if next_track_id is None:

@@ -1,7 +1,13 @@
-from dataclasses import dataclass
+from __future__ import annotations
 
-from source.objects.rolling_stock import RollingStock
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
 from source.shared.types import Float
+
+
+if TYPE_CHECKING:
+    from source.objects.rolling_stock import RollingStock
 
 
 @dataclass
@@ -32,7 +38,7 @@ class BrakeConnection(ServiceConnection):
 
 
 @dataclass
-class Connection:
+class Coupling:
     a: RollingStock | None = None
     b: RollingStock | None = None
     slack: Float = 0.025  # m
@@ -40,7 +46,7 @@ class Connection:
     max_tension_force: Float = 0.0
     max_compression_force: Float = 0.0
     a_knuckle_open: bool = True  # whether connections are open. knuckle open or not
-    b_knucle_open: bool = True  # whether connections are open. knuckle open or not
+    b_knuckle_open: bool = True  # whether connections are open. knuckle open or not
     brakeline: BrakeConnection | None = None
     steam: SteamConnection | None = None
     electrical: ElectricalConnection | None = None
@@ -63,14 +69,14 @@ class Connection:
 
 
 @dataclass
-class Coupler(Connection):
+class AutomaticCoupling(Coupling):
     @property
     def can_uncouple(self) -> bool:
         return True
 
 
 @dataclass
-class FixedConnection(Connection):
+class FixedCoupling(Coupling):
     @property
     def can_uncouple(self) -> bool:
         return False

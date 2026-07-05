@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from math import cos, sin, tan, radians
 
 from source.shared.types import Float, Point
+from source.simulation.constants import BLOCKED_PORT, EXIT_PORT
 
 
 type NodeId = str
@@ -113,6 +114,14 @@ class Node:
         )
 
     def get_route_geometry(self, route: NodeRoute, loading_gauge: Float):
+        if route.b == EXIT_PORT or route.b == BLOCKED_PORT:
+            a_pos = self.port_point(route.a, loading_gauge)
+            a_angle = self.port_angle(route.a, loading_gauge)
+
+            b_pos = point_from_angle(a_pos, a_angle, loading_gauge)
+            b_angle = a_angle
+
+            return (a_pos, a_angle, b_pos, b_angle)
         a_pos = self.port_point(route.a, loading_gauge)
         b_pos = self.port_point(route.b, loading_gauge)
 
@@ -133,7 +142,7 @@ class BufferNode(Node):
             centre=centre,
             altitude=altitude,
             rotation_degrees=rotation_degrees,
-            routes=(NodeRoute("blocked", "end", "__null__"),),
+            routes=(NodeRoute("blocked", "end", BLOCKED_PORT),),
             current_position="blocked",
         )
 
@@ -153,7 +162,7 @@ class ExitNode(Node):
             centre=centre,
             altitude=altitude,
             rotation_degrees=rotation_degrees,
-            routes=(NodeRoute("exit", "exit", "__exit__"),),
+            routes=(NodeRoute("exit", "exit", EXIT_PORT),),
             current_position="exit",
         )
 
