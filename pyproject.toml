@@ -12,3 +12,9 @@ venv = "venv"
 
 [tool.ruff]
 line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["source/tests"]
+python_files = ["*_test.py"]
+python_functions = ["test_*"]
+addopts = "-ra"

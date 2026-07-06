@@ -40,14 +40,9 @@ class Game(QtWidgets.QWidget):
     def cycle_node_position(self, node_id: str) -> None:
         if self.yard is None:
             return
-        node = self.yard.nodes[node_id]
-        positions = node.positions_ordered()
 
-        if node.get_num_positions() <= 1:
-            return
-        current_index = positions.index(node.current_position)
-        next_index = (current_index + 1) % len(positions)
-        node.set_position(positions[next_index])
+        node = self.yard.nodes[node_id]
+        node.cycle_positions()
         self.draw_yard()
 
     def mousePressEvent(self, event):

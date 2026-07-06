@@ -15,7 +15,7 @@ from source.shared.types import Float
 class Yard:
     nodes: dict[NodeId, Node]
     tracks: dict[str, Track]
-    loading_gauge: Float = 40.0
+    loading_gauge: Float = 80
     track_width: Float = 4
 
     def drawable_tracks(self) -> tuple[Track, ...]:

@@ -1,47 +1,53 @@
-from source.objects import yard
+import pytest
+
 from source.objects.position import NodePosition, TrackPosition
 from source.objects.rolling_stock import Truck, TruckState
 from source.simulation import physics
 from source.tests.track_test import make_test_yard
 
 
-def test_truck_rolls_from_track_onto_node():
-    test_yard = make_test_yard()
+@pytest.fixture
+def yard():
+    return make_test_yard()
+
+
+def test_truck_rolls_from_track_onto_node(yard):
     state = TruckState(
         truck=Truck(
-            offset_from_centre=0.0, wheelbase=2.0, axle_count=2, rolling_resistance_per_axle=500
+            offset_from_centre=0.0,
+            wheel_diameter=1.0,
+            axle_spacing=2.5,
+            axle_count=2,
+            max_swivel_angle=5,
+            rolling_resistance_per_axle=500,
         ),
-        truck_position=TrackPosition("t1", 145.0),
+        truck_position=TrackPosition(track_id="t1", distance_along=145.0),
     )
 
-    print(test_yard.track_length("t1"))
-    physics.move_truck_state(test_yard, state, 2.0)
+    physics.move_truck_state(yard, state, 2.0)
 
     assert isinstance(state.truck_position, NodePosition)
     assert state.truck_position.node_id == "sw1"
     assert state.truck_position.entered_from_port_id == "root"
-    print(state.truck_position.distance_along)
 
 
-def test_truck_rolls_from_node_to_next_track():
+def test_truck_rolls_from_node_to_next_track(yard):
 
-    test_yard = make_test_yard()
     state = TruckState(
         truck=Truck(
-            offset_from_centre=0.0, wheelbase=2.0, axle_count=2, rolling_resistance_per_axle=500
+            offset_from_centre=0.0,
+            wheel_diameter=1.0,
+            axle_spacing=2.5,
+            axle_count=2,
+            max_swivel_angle=5,
+            rolling_resistance_per_axle=500,
         ),
-        truck_position=NodePosition("sw1", "root", 1.0),
+        truck_position=NodePosition(node_id="sw1", entered_from_port_id="root", distance_along=1.0),
     )
-    print(test_yard.node_route_length_from_port("sw1", "root"))
-    physics.move_truck_state(test_yard, state, -2.0)
+    physics.move_truck_state(yard, state, -2.0)
     assert isinstance(state.truck_position, TrackPosition)
     assert state.truck_position.track_id == "t1"
 
 
 def test_car_rolls_two_trucks_across_tracks():
     pass
-
-
-def test_all():
-    test_truck_rolls_from_node_to_next_track()
-    test_truck_rolls_from_track_onto_node()

@@ -130,6 +130,15 @@ class Node:
 
         return (a_pos, a_angle, b_pos, b_angle)
 
+    def cycle_positions(self):
+        positions = self.positions_ordered()
+
+        if self.get_num_positions() <= 1:
+            return
+        current_index = positions.index(self.current_position)
+        next_index = (current_index + 1) % len(positions)
+        self.set_position(positions[next_index])
+
 
 @dataclass
 class BufferNode(Node):

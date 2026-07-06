@@ -12,7 +12,7 @@ from source.objects.yard import Yard
 def make_test_yard() -> Yard:
     yard_exit_w = ExitNode("exit_west", "West Exit", Point(20, 500), 0, 180)
     yard_exit_e = ExitNode("exit_east", "East Exit", Point(980, 500), 0, 0)
-    buffer = BufferNode("buffer_1", "Buffer 1", Point(500, 250), 0, 0)
+    buffer = BufferNode("buffer_1", "Buffer 1", Point(300, 470), 0, 0)
 
     sw1 = SwitchNode(
         id="sw1",

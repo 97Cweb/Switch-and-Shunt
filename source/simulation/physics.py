@@ -1,11 +1,18 @@
+from math import sqrt
+
 from source.objects.position import NodePosition, TrackPosition, TruckPosition
 from source.objects.rolling_stock import RollingStockState
 from source.objects.truck import TruckState
 from source.objects.yard import Yard
 from source.shared.types import Float
 
-from source.shared.geometry import get_bezier_length_from_points_and_angles
+from source.shared.geometry import get_bezier_length_from_points_and_angles, sign
 from source.simulation.constants import BLOCKED_PORT, EXIT_PORT, GRAVITY
+from source.simulation.curve_forces import (
+    curve_bite_from_intertruck_swivel,
+    curve_bite_from_wheelbase,
+    curve_lateral_force,
+)
 
 
 def move_truck_state(yard: Yard, truck_state: TruckState, distance_delta: Float) -> None:
@@ -24,7 +31,7 @@ def moved_truck_position(
         new_distance = position.distance_along + distance_delta
 
         if 0.0 <= new_distance <= length:
-            return TrackPosition(position.track_id, new_distance)
+            return TrackPosition(position.track_id, distance_along=new_distance)
 
         if new_distance > length:
             track = yard.tracks[position.track_id]
@@ -118,12 +125,9 @@ def update_rolling_stock_state(yard: Yard, state: RollingStockState, dt: Float) 
     if any(truck.is_derailed for truck in state.trucks):
         return
 
-    distribute_body_force_to_trucks(state)
-    apply_brake_forces(state)
-    apply_rolling_resistance(state)
-    apply_gravity_forces(yard, state)
+    apply_forces(yard, state)
 
-    force = sum(truck.applied_force for truck in state.trucks or [])
+    force = sum(truck.longitudinal_force for truck in state.trucks or [])
 
     state_acceleration = force / state.stock.mass if state.stock.mass > 0.0 else 0.0
 
@@ -135,23 +139,15 @@ def update_rolling_stock_state(yard: Yard, state: RollingStockState, dt: Float) 
         move_truck_state(yard, truck_state, distance_delta=distance_delta)
 
     clear_truck_forces(state)
-    state.applied_force = 0.0
-
-
-def sign(value: Float) -> int:
-    if value > 0:
-        return 1
-    if value < 0:
-        return -1
-    return 0
+    clear_rolling_stock_forces(state)
 
 
 def distribute_body_force_to_trucks(state: RollingStockState) -> None:
 
-    force_per_truck = state.applied_force / state.truck_count
+    force_per_truck = state.longitudinal_force / state.truck_count
 
     for truck_state in state.trucks:
-        truck_state.applied_force += force_per_truck
+        truck_state.longitudinal_force += force_per_truck
 
 
 def apply_brake_forces(state: RollingStockState) -> None:
@@ -168,7 +164,7 @@ def apply_brake_forces(state: RollingStockState) -> None:
     brake_direction = -sign(state.velocity)
 
     for truck_state in state.trucks:
-        truck_state.applied_force += brake_direction * force_per_truck
+        truck_state.longitudinal_force += brake_direction * force_per_truck
 
 
 def apply_gravity_forces(yard: Yard, state: RollingStockState) -> None:
@@ -176,9 +172,11 @@ def apply_gravity_forces(yard: Yard, state: RollingStockState) -> None:
         grade = yard.grade_at_position(truck_state.truck_position)
         mass = truck_support_mass(state)
 
-        truck_state.applied_force -= (
+        truck_state.longitudinal_force -= (
             mass * GRAVITY * grade
         )  # negative due to opposing based on position
+
+        truck_state.vertical_force = mass * GRAVITY * sqrt(max(0.0, 1.0 - grade * grade))
 
 
 def apply_rolling_resistance(state: RollingStockState) -> None:
@@ -189,16 +187,54 @@ def apply_rolling_resistance(state: RollingStockState) -> None:
     resistance_direction = -sign(state.velocity)
 
     for truck_state in state.trucks:
-        truck_state.applied_force += (
+        truck_state.longitudinal_force += (
             resistance_direction
             * truck_state.truck.rolling_resistance_per_axle
             * truck_state.truck.axle_count
         )
 
 
+def apply_curve_bite_forces(yard: Yard, state: RollingStockState) -> None:
+
+    bite_force = curve_bite_from_wheelbase(yard, state) + curve_bite_from_intertruck_swivel(
+        yard, state
+    )
+    force_per_truck = bite_force / state.truck_count
+
+    for truck_state in state.trucks:
+        truck_state.longitudinal_force += force_per_truck
+
+
+def apply_forces(yard: Yard, state: RollingStockState) -> None:
+
+    distribute_body_force_to_trucks(state)
+    apply_brake_forces(state)
+    apply_rolling_resistance(state)
+    apply_curve_bite_forces(yard, state)
+    apply_gravity_forces(yard, state)
+    apply_centrifugal_forces(yard, state)
+
+    # todo add coupler forces
+
+
+def apply_centrifugal_forces(yard: Yard, state: RollingStockState) -> None:
+    mass_per_truck = truck_support_mass(state)
+
+    for truck_state in state.trucks:
+        truck_state.lateral_force += curve_lateral_force(
+            yard, truck_state.truck_position, mass_per_truck, state.velocity
+        )
+
+
 def clear_truck_forces(state: RollingStockState) -> None:
     for truck_state in state.trucks:
-        truck_state.applied_force = 0.0
+        truck_state.longitudinal_force = 0.0
+        truck_state.lateral_force = 0.0
+        truck_state.vertical_force = 0.0
+
+
+def clear_rolling_stock_forces(state: RollingStockState) -> None:
+    state.longitudinal_force = 0.0
 
 
 def truck_support_mass(state: RollingStockState) -> Float:

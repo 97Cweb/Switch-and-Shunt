@@ -47,7 +47,7 @@ class RollingStockState:
     electrical: ElectricalState | None = None
     mu: MUState | None = None
 
-    applied_force: Float = 0.0
+    longitudinal_force: Float = 0.0
 
     @classmethod
     def from_stock(cls, stock: RollingStock) -> "RollingStockState":
