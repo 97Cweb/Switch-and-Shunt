@@ -4,7 +4,10 @@ from source.objects.position import NodePosition, TrackPosition, TruckPosition
 from source.objects.track import NodeId, Track
 from source.objects.node import Node, PortId
 
-from source.shared.geometry import get_bezier_length_from_points_and_angles
+from source.shared.geometry import (
+    get_bezier_curvature_from_points_and_angles,
+    get_bezier_length_from_points_and_angles,
+)
 from source.shared.types import Float
 
 
@@ -104,4 +107,50 @@ class Yard:
 
         if isinstance(position, NodePosition):
             return self.node_route_grade_from_port(position.node_id, position.entered_from_port_id)
+        return 0.0
+
+    def track_curvature(self, track_id: str, distance_along: Float) -> Float:
+        length = self.track_length(track_id)
+
+        if length == 0.0:
+            return 0.0
+
+        t = distance_along / length
+        t = max(0.0, min(1.0, t))
+
+        return get_bezier_curvature_from_points_and_angles(*self.get_track_geometry(track_id), t)
+
+    def node_route_curvature_from_port(
+        self,
+        node_id: NodeId,
+        port_id: PortId,
+        distance_along: Float,
+    ) -> Float:
+        node = self.nodes[node_id]
+        route = node.active_route_from_port(port_id)
+
+        if route is None:
+            return 0.0
+
+        geometry = node.get_route_geometry(route, self.loading_gauge)
+
+        length = get_bezier_length_from_points_and_angles(*geometry)
+
+        if length == 0.0:
+            return 0.0
+
+        t = distance_along / length
+        t = max(0.0, min(1.0, t))
+
+        return get_bezier_curvature_from_points_and_angles(*geometry, t)
+
+    def curvature_at_position(self, position: TruckPosition | None) -> Float:
+        if position is None:
+            return 0.0
+        if isinstance(position, TrackPosition):
+            return self.track_curvature(position.track_id, position.distance_along)
+        if isinstance(position, NodePosition):
+            return self.node_route_curvature_from_port(
+                position.node_id, position.entered_from_port_id, position.distance_along
+            )
         return 0.0

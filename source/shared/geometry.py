@@ -48,6 +48,47 @@ def get_bezier_point(
     )
 
 
+def get_bezier_derivative(p0: Point, p1: Point, p2: Point, p3: Point, t: Float) -> Point:
+    u = 1.0 - t
+    return Point(
+        3 * u**2 * (p1.x - p0.x) + 6 * u * t * (p2.x - p1.x) + 3 * t**2 * (p3.x - p2.x),
+        3 * u**2 * (p1.y - p0.y) + 6 * u * t * (p2.y - p1.y) + 3 * t**2 * (p3.y - p2.y),
+    )
+
+
+def get_bezier_second_derivative(p0: Point, p1: Point, p2: Point, p3: Point, t: Float) -> Point:
+    u = 1.0 - t
+
+    return Point(
+        6 * u * (p2.x - 2 * p1.x + p0.x) + 6 * t * (p3.x - 2 * p2.x + p1.x),
+        6 * u * (p2.y - 2 * p1.y + p0.y) + 6 * t * (p3.y - 2 * p2.y + p1.y),
+    )
+
+
+def get_bezier_curvature_from_points(p0: Point, p1: Point, p2: Point, p3: Point, t: Float) -> Float:
+    d1 = get_bezier_derivative(p0, p1, p2, p3, t)
+    d2 = get_bezier_second_derivative(p0, p1, p2, p3, t)
+
+    speed_sq = d1.x**2 + d1.y**2
+
+    if speed_sq == 0.0:
+        return 0.0
+
+    cross = d1.x * d2.y - d1.y * d2.x
+
+    return abs(cross) / (speed_sq**1.5)
+
+
+def get_bezier_curvature_from_points_and_angles(
+    a_pos: Point,
+    a_angle: Float,
+    b_pos: Point,
+    b_angle: Float,
+    t: Float,
+) -> Float:
+    return get_bezier_curvature_from_points(*get_bezier_points(a_pos, a_angle, b_pos, b_angle), t)
+
+
 def get_bezier_length_from_points(
     p0: Point, p1: Point, p2: Point, p3: Point, samples: int = 64
 ) -> Float:
