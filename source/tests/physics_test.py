@@ -8,6 +8,15 @@ from source.simulation.curve_forces import (
 )
 from source.simulation.physics import update_rolling_stock_state
 
+from source.simulation.physics import (
+    apply_gravity_forces,
+    apply_pitch_load_transfer,
+    apply_roll_load_transfer,
+    apply_yaw_moment_from_trucks,
+    check_for_derail,
+)
+from source.simulation.constants import DERAIL_THRESHOLD, GRAVITY
+
 
 def test_car_accelerates_when_force_applied(yard, straight_car_state):
     straight_car_state.longitudinal_force = 1000.0
@@ -133,3 +142,88 @@ def test_intertruck_swivel_bite_opposes_forward_velocity(yard, curved_car_state)
     bite_force = curve_bite_from_intertruck_swivel(yard, curved_car_state)
 
     assert bite_force < 0.0
+
+
+def test_gravity_sets_even_left_right_vertical_load(yard, straight_car_state):
+    apply_gravity_forces(yard, straight_car_state)
+
+    for truck_state in straight_car_state.trucks:
+        assert truck_state.vertical_force > 0.0
+        assert isclose(
+            truck_state.left_vertical_force,
+            truck_state.right_vertical_force,
+            rel_tol=0.000001,
+        )
+
+
+def test_pitch_load_transfer_moves_weight_between_front_and_rear(straight_car_state):
+    front = max(
+        straight_car_state.trucks,
+        key=lambda truck_state: truck_state.truck.offset_from_centre,
+    )
+    rear = min(
+        straight_car_state.trucks,
+        key=lambda truck_state: truck_state.truck.offset_from_centre,
+    )
+
+    front.set_vertical_force(100.0)
+    rear.set_vertical_force(100.0)
+
+    straight_car_state.pitch_moment = 1000.0
+    apply_pitch_load_transfer(straight_car_state)
+
+    assert front.vertical_force < 100.0
+    assert rear.vertical_force > 100.0
+    assert isclose(front.vertical_force + rear.vertical_force, 200.0, rel_tol=0.000001)
+
+
+def test_roll_load_transfer_moves_load_left_to_right(yard, straight_car_state):
+    for truck_state in straight_car_state.trucks:
+        truck_state.set_vertical_force(100.0)
+
+    straight_car_state.roll_moment = yard.loading_gauge * 20.0
+
+    apply_roll_load_transfer(yard, straight_car_state)
+
+    for truck_state in straight_car_state.trucks:
+        assert truck_state.left_vertical_force < 50.0
+        assert truck_state.right_vertical_force > 50.0
+        assert isclose(truck_state.vertical_force, 100.0, rel_tol=0.000001)
+
+
+def test_derail_uses_left_right_vertical_load(straight_car_state):
+    truck_state = straight_car_state.trucks[0]
+    truck_state.left_vertical_force = 10.0
+    truck_state.right_vertical_force = 1000.0
+    truck_state.lateral_force = DERAIL_THRESHOLD * 10.0 + 1.0
+
+    check_for_derail(straight_car_state)
+
+    assert truck_state.is_derailed
+
+
+def test_yaw_moment_is_created_by_lateral_force_at_offset(straight_car_state):
+    front = max(
+        straight_car_state.trucks,
+        key=lambda truck_state: truck_state.truck.offset_from_centre,
+    )
+    rear = min(
+        straight_car_state.trucks,
+        key=lambda truck_state: truck_state.truck.offset_from_centre,
+    )
+
+    front.lateral_force = 10.0
+    rear.lateral_force = 0.0
+
+    apply_yaw_moment_from_trucks(straight_car_state)
+
+    assert straight_car_state.yaw_moment != 0.0
+
+
+def test_equal_lateral_forces_on_symmetric_trucks_create_no_yaw(straight_car_state):
+    for truck_state in straight_car_state.trucks:
+        truck_state.lateral_force = 10.0
+
+    apply_yaw_moment_from_trucks(straight_car_state)
+
+    assert isclose(straight_car_state.yaw_moment, 0.0, abs_tol=0.000001)

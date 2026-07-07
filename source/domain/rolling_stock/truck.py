@@ -35,10 +35,55 @@ class TruckState:
     truck_position: TruckPosition | None = None
     longitudinal_force: Float = 0.0
     lateral_force: Float = 0.0
-    vertical_force: Float = 0.0
+    _left_vertical_force: Float = 0.0
+    _right_vertical_force: Float = 0.0
     swivel_angle: Float | None = None
     is_derailed: bool = False
 
     @property
     def wheel_climb_ratio(self) -> Float:
-        return abs(self.lateral_force) / self.vertical_force
+        vertical_force = self.climbing_side_vertical_force
+        if vertical_force <= 0.0:
+            return 0.0
+        return abs(self.lateral_force) / vertical_force
+
+    @property
+    def climbing_side_vertical_force(self) -> Float:
+        if self.lateral_force > 0.0:
+            return self.left_vertical_force
+        if self.lateral_force < 0.0:
+            return self.right_vertical_force
+        return self.vertical_force
+
+    @property
+    def vertical_force(self) -> Float:
+        return self.left_vertical_force + self.right_vertical_force
+
+    @property
+    def left_vertical_force(self) -> Float:
+        return self._left_vertical_force
+
+    @left_vertical_force.setter
+    def left_vertical_force(self, value: Float) -> None:
+        self._left_vertical_force = max(0.0, value)
+
+    @property
+    def right_vertical_force(self) -> Float:
+        return self._right_vertical_force
+
+    @right_vertical_force.setter
+    def right_vertical_force(self, value: Float) -> None:
+        self._right_vertical_force = max(0.0, value)
+
+    def set_vertical_force(self, total_force: Float) -> None:
+        force = max(0.0, total_force) / 2.0
+        self.left_vertical_force = force
+        self.right_vertical_force = force
+
+    def add_vertical_force(self, delta) -> None:
+        self.left_vertical_force += delta / 2.0
+        self.right_vertical_force += delta / 2.0
+
+    def shift_vertical_force(self, delta) -> None:
+        self.left_vertical_force -= delta
+        self.right_vertical_force += delta
