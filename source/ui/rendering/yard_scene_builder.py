@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtGui
 
-from source.objects.node import Node
+from source.domain.infrastructure import Node
 from source.ui.items.node_item import BufferItem, ExitItem, SwitchItem
 from source.ui.items.track_item import TrackItem
 

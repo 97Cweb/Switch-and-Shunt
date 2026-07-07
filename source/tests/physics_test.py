@@ -1,6 +1,6 @@
 from math import isclose
 
-from source.objects.position import TrackPosition
+from source.domain.infrastructure.position import TrackPosition
 from source.simulation.curve_forces import (
     curve_bite_from_intertruck_swivel,
     curve_bite_from_wheelbase,

@@ -1,9 +1,9 @@
 import pytest
 
-from source.objects.coupling import Coupling
-from source.objects.position import TrackPosition
-from source.objects.rolling_stock import RollingStock, RollingStockState
-from source.objects.truck import Truck
+from source.domain.rolling_stock.coupling import Coupling
+from source.domain.infrastructure.position import TrackPosition
+from source.domain.rolling_stock import RollingStock, RollingStockState
+from source.domain.rolling_stock.truck import Truck
 from source.tests.track_test import make_test_yard
 
 
@@ -18,6 +18,7 @@ def make_test_car_state(track_id: str) -> RollingStockState:
         name="Test Boxcar",
         length=12.0,
         empty_mass=10000.0,
+        empty_com_height=2,
         rolling_resistance=50.0,
         max_handbrake_force=2000.0,
         front_coupling=Coupling(),
@@ -61,4 +62,3 @@ def straight_car_state():
 @pytest.fixture
 def curved_car_state():
     return make_test_car_state("t3")
-

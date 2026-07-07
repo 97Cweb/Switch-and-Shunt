@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from source.objects.node import NodeId, PortId
+from source.domain.infrastructure.node import NodeId, PortId
 
 
 @dataclass(frozen=True)

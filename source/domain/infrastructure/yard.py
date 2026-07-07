@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from source.objects.position import NodePosition, TrackPosition, TruckPosition
-from source.objects.track import NodeId, Track
-from source.objects.node import Node, PortId
+from source.domain.infrastructure.position import NodePosition, TrackPosition, TruckPosition
+from source.domain.infrastructure.track import NodeId, Track
+from source.domain.infrastructure.node import Node, PortId
 
 from source.shared.geometry import (
     get_bezier_curvature_from_points_and_angles,

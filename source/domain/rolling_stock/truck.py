@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from source.objects.position import TruckPosition
+from source.domain.infrastructure.position import TruckPosition
 from source.shared.types import Float
 
 

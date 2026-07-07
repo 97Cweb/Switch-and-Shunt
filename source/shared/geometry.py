@@ -122,9 +122,4 @@ def get_bezier_length_from_points_and_angles(
     )
 
 
-def sign(value: Float) -> int:
-    if value > 0:
-        return 1
-    if value < 0:
-        return -1
-    return 0
+

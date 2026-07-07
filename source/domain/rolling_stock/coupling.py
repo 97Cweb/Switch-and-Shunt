@@ -7,7 +7,7 @@ from source.shared.types import Float
 
 
 if TYPE_CHECKING:
-    from source.objects.rolling_stock import RollingStock
+    from source.domain.rolling_stock import RollingStock
 
 
 @dataclass

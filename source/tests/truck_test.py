@@ -1,7 +1,7 @@
 import pytest
 
-from source.objects.position import NodePosition, TrackPosition
-from source.objects.rolling_stock import Truck, TruckState
+from source.domain.infrastructure.position import NodePosition, TrackPosition
+from source.domain.rolling_stock import Truck, TruckState
 from source.simulation import physics
 from source.tests.track_test import make_test_yard
 

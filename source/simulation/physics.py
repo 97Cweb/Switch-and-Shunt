@@ -1,13 +1,14 @@
 from math import sqrt
 
-from source.objects.position import NodePosition, TrackPosition, TruckPosition
-from source.objects.rolling_stock import RollingStockState
-from source.objects.truck import TruckState
-from source.objects.yard import Yard
+from source.domain.infrastructure.position import NodePosition, TrackPosition, TruckPosition
+from source.domain.rolling_stock import RollingStockState
+from source.domain.rolling_stock.truck import TruckState
+from source.domain.infrastructure.yard import Yard
+from source.shared.math import sign
 from source.shared.types import Float
 
-from source.shared.geometry import get_bezier_length_from_points_and_angles, sign
-from source.simulation.constants import BLOCKED_PORT, EXIT_PORT, GRAVITY
+from source.shared.geometry import get_bezier_length_from_points_and_angles
+from source.simulation.constants import BLOCKED_PORT, DERAIL_THRESHOLD, EXIT_PORT, GRAVITY
 from source.simulation.curve_forces import (
     curve_bite_from_intertruck_swivel,
     curve_bite_from_wheelbase,
@@ -126,6 +127,7 @@ def update_rolling_stock_state(yard: Yard, state: RollingStockState, dt: Float) 
         return
 
     apply_forces(yard, state)
+    check_for_derail(state)
 
     force = sum(truck.longitudinal_force for truck in state.trucks or [])
 
@@ -236,6 +238,9 @@ def clear_truck_forces(state: RollingStockState) -> None:
 
 def clear_rolling_stock_forces(state: RollingStockState) -> None:
     state.longitudinal_force = 0.0
+    state.pitch_moment = 0.0
+    state.roll_moment = 0.0
+    state.yaw_moment = 0.0
 
 
 def truck_support_mass(state: RollingStockState, truck_state: TruckState) -> Float:
@@ -251,3 +256,9 @@ def truck_support_mass(state: RollingStockState, truck_state: TruckState) -> Flo
     mass_per_axle = state.stock.mass / total_axles
 
     return mass_per_axle * truck_state.truck.axle_count
+
+
+def check_for_derail(state: RollingStockState) -> None:
+    for truck_state in state.trucks:
+        if truck_state.wheel_climb_ratio > DERAIL_THRESHOLD:
+            truck_state.is_derailed = True

@@ -1,10 +1,9 @@
-from dataclasses import dataclass
 from math import radians
 
-from source.objects.position import TruckPosition
-from source.objects.rolling_stock import RollingStockState
-from source.objects.yard import Yard
-from source.shared.geometry import sign
+from source.domain.infrastructure.position import TruckPosition
+from source.domain.rolling_stock import RollingStockState
+from source.domain.infrastructure.yard import Yard
+from source.shared.math import sign
 from source.shared.types import Float
 from source.simulation.constants import CURVE_BITE_COEFFICIENT
 

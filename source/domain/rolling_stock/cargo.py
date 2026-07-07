@@ -7,5 +7,6 @@ from source.shared.types import Float
 class Cargo:
     name: str
     mass: Float
+    volume: Float
     health: Float = 1.0
     fragility: Float = 0.5
