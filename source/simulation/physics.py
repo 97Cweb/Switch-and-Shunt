@@ -170,7 +170,7 @@ def apply_brake_forces(state: RollingStockState) -> None:
 def apply_gravity_forces(yard: Yard, state: RollingStockState) -> None:
     for truck_state in state.trucks:
         grade = yard.grade_at_position(truck_state.truck_position)
-        mass = truck_support_mass(state)
+        mass = truck_support_mass(state, truck_state)
 
         truck_state.longitudinal_force -= (
             mass * GRAVITY * grade
@@ -218,9 +218,10 @@ def apply_forces(yard: Yard, state: RollingStockState) -> None:
 
 
 def apply_centrifugal_forces(yard: Yard, state: RollingStockState) -> None:
-    mass_per_truck = truck_support_mass(state)
 
     for truck_state in state.trucks:
+        mass_per_truck = truck_support_mass(state, truck_state)
+
         truck_state.lateral_force += curve_lateral_force(
             yard, truck_state.truck_position, mass_per_truck, state.velocity
         )
@@ -237,5 +238,16 @@ def clear_rolling_stock_forces(state: RollingStockState) -> None:
     state.longitudinal_force = 0.0
 
 
-def truck_support_mass(state: RollingStockState) -> Float:
-    return state.stock.mass / state.truck_count
+def truck_support_mass(state: RollingStockState, truck_state: TruckState) -> Float:
+    total_axles = 0
+
+    for truck_state in state.trucks:
+        truck = truck_state.truck
+        total_axles += truck.axle_count
+
+    if total_axles <= 0:
+        return state.stock.mass / max(len(state.trucks), 1)
+
+    mass_per_axle = state.stock.mass / total_axles
+
+    return mass_per_axle * truck_state.truck.axle_count
