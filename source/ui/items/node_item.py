@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 
-from source.domain.infrastructure import Node
+from source.domain.infrastructure.node import Node
 from source.domain.infrastructure.yard import Yard
 from source.ui.rendering.drawing import DrawingHelpers
 

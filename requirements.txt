@@ -1,13 +1,5 @@
-basedpyright==1.39.9
+PySide6==6.11.1
 beartype==0.22.9
-iniconfig==2.3.0
 jaxtyping==0.3.11
-nodejs-wheel-binaries==24.16.0
-packaging==26.2
-pluggy==1.6.0
-Pygments==2.20.0
-PySide6_Addons==6.11.1
-PySide6_Essentials==6.11.1
 pytest==9.1.1
-shiboken6==6.11.1
-wadler_lindig==0.1.7
+basedpyright==1.39.9
