@@ -14,3 +14,4 @@ class Track:
     id: str
     a: PortRef
     b: PortRef
+    is_electrified: bool = False
