@@ -10,6 +10,7 @@ class Truck:
     wheel_diameter: Float
     axle_spacing: Float
     axle_count: int
+    is_powered: bool
     rolling_resistance_per_axle: Float
 
     max_swivel_angle: Float
