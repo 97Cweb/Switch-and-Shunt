@@ -10,7 +10,7 @@ from source.simulation.physics import update_rolling_stock_state
 
 from source.simulation.physics import (
     apply_gravity_and_static_loads,
-    apply_pitch_moment_distribution,
+    apply_pitch_load_transfer,
     apply_roll_load_transfer,
     calculate_yaw_moment,
     check_for_derail,
@@ -203,7 +203,7 @@ def test_pitch_load_transfer_moves_weight_between_front_and_rear(straight_car_st
     rear.set_vertical_force(100.0)
 
     straight_car_state.pitch_moment = 1000.0
-    apply_pitch_moment_distribution(straight_car_state)
+    apply_pitch_load_transfer(straight_car_state)
 
     assert front.vertical_force < 100.0
     assert rear.vertical_force > 100.0
@@ -222,6 +222,27 @@ def test_roll_load_transfer_moves_load_left_to_right(yard, straight_car_state):
         assert truck_state.left_vertical_force < 50.0
         assert truck_state.right_vertical_force > 50.0
         assert isclose(truck_state.vertical_force, 100.0, rel_tol=0.000001)
+
+
+def test_roll_load_transfer_has_expected_magnitude(
+    yard,
+    straight_car_state,
+):
+    for truck_state in straight_car_state.trucks:
+        truck_state.set_vertical_force(100.0)
+
+    straight_car_state.roll_moment = yard.loading_gauge * 20.0
+
+    apply_roll_load_transfer(
+        yard,
+        straight_car_state,
+    )
+
+    total_left = sum(truck_state.left_vertical_force for truck_state in straight_car_state.trucks)
+    total_right = sum(truck_state.right_vertical_force for truck_state in straight_car_state.trucks)
+
+    assert isclose(total_left, 80.0)
+    assert isclose(total_right, 120.0)
 
 
 def test_derail_uses_left_right_vertical_load(straight_car_state):

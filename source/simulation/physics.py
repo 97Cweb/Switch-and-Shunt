@@ -163,11 +163,13 @@ def apply_lateral_curve_force(yard: Yard, state: RollingStockState) -> None:
 def calculate_body_moments(state: RollingStockState) -> None:
     calculate_pitch_moment(state)
     calculate_roll_moment(state)
-    # TODO distribute yaw moment into truck lateral reactions
     calculate_yaw_moment(state)
 
 
 def calculate_pitch_moment(state: RollingStockState) -> None:
+    # first pass, all longitudinal reactions act at rail height.
+    # grade and future couplers will need separate application heights
+
     total_longitudinal_force = sum(truck_state.longitudinal_force for truck_state in state.trucks)
 
     state.pitch_moment = state.stock.com_height * total_longitudinal_force
@@ -184,17 +186,19 @@ def calculate_yaw_moment(state: RollingStockState) -> None:
         for truck_state in state.trucks
     )
 
+    # TODO use yaw moment in something, derailment?
+
 
 # Load Transfer
 def apply_load_transfer(yard: Yard, state: RollingStockState) -> None:
     # pitch changes truck's total vertical load
-    apply_pitch_moment_distribution(state)
+    apply_pitch_load_transfer(state)
 
-    # roll divides lateral load using those updated loads
+    # roll shifts vertical load between left and right wheels
     apply_roll_load_transfer(yard, state)
 
 
-def apply_pitch_moment_distribution(state: RollingStockState) -> None:
+def apply_pitch_load_transfer(state: RollingStockState) -> None:
     if len(state.trucks) < 2:
         return
 
@@ -226,7 +230,7 @@ def apply_roll_load_transfer(yard: Yard, state: RollingStockState) -> None:
     for truck_state in state.trucks:
         share = truck_state.vertical_force / total_vertical_force
         transfer = total_transfer * share
-        truck_state.shift_vertical_force(transfer / 2.0)
+        truck_state.shift_vertical_force(transfer)
 
 
 # Derailment
