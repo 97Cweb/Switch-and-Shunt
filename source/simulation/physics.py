@@ -164,25 +164,31 @@ def update_body_from_truck_reactions(state: RollingStockState, dt: Float) -> Non
 
 
 def apply_load_transfer_from_body_moments(yard: Yard, state: RollingStockState) -> None:
-    apply_pitch_load_transfer(state)
+    apply_pitch_moment_distribution(state)
     apply_roll_load_transfer(yard, state)
 
 
-def apply_pitch_load_transfer(state: RollingStockState) -> None:
-    trucks = sorted(state.trucks, key=lambda truck_state: truck_state.truck.offset_from_centre)
-    if len(trucks) < 2:
+def apply_pitch_moment_distribution(state: RollingStockState) -> None:
+    if len(state.trucks) < 2:
         return
 
-    front = trucks[-1]
-    rear = trucks[0]
+    denominator = 0.0
 
-    wheelbase = front.truck.offset_from_centre - rear.truck.offset_from_centre
-    if wheelbase == 0.0:
+    for truck_state in state.trucks:
+        stiffness = truck_state.truck.vertical_stiffness
+        distance = truck_state.truck.offset_from_centre
+        denominator += stiffness * distance * distance
+
+    if denominator == 0.0:
         return
 
-    load_delta = state.pitch_moment / wheelbase
-    front.add_vertical_force(-load_delta)
-    rear.add_vertical_force(load_delta)
+    for truck_state in state.trucks:
+        stiffness = truck_state.truck.vertical_stiffness
+        distance = truck_state.truck.offset_from_centre
+
+        load_delta = state.pitch_moment * stiffness * distance / denominator
+
+        truck_state.add_vertical_force(-load_delta)
 
 
 def apply_roll_load_transfer(yard: Yard, state: RollingStockState) -> None:

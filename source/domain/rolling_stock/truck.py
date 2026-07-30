@@ -28,6 +28,10 @@ class Truck:
             return 0.0
         return self.axle_spacing * (self.axle_count - 1)
 
+    @property
+    def vertical_stiffness(self) -> float:
+        return self.axle_count
+
 
 @dataclass
 class TruckState:

@@ -10,7 +10,7 @@ from source.simulation.physics import update_rolling_stock_state
 
 from source.simulation.physics import (
     apply_gravity_forces,
-    apply_pitch_load_transfer,
+    apply_pitch_moment_distribution,
     apply_roll_load_transfer,
     apply_yaw_moment_from_trucks,
     check_for_derail,
@@ -170,7 +170,7 @@ def test_pitch_load_transfer_moves_weight_between_front_and_rear(straight_car_st
     rear.set_vertical_force(100.0)
 
     straight_car_state.pitch_moment = 1000.0
-    apply_pitch_load_transfer(straight_car_state)
+    apply_pitch_moment_distribution(straight_car_state)
 
     assert front.vertical_force < 100.0
     assert rear.vertical_force > 100.0
