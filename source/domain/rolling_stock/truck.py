@@ -29,7 +29,7 @@ class Truck:
         return self.axle_spacing * (self.axle_count - 1)
 
     @property
-    def vertical_stiffness(self) -> float:
+    def vertical_stiffness(self) -> Float:
         return self.axle_count
 
 

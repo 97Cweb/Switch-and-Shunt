@@ -9,10 +9,10 @@ from source.simulation.curve_forces import (
 from source.simulation.physics import update_rolling_stock_state
 
 from source.simulation.physics import (
-    apply_gravity_forces,
+    apply_gravity_and_static_loads,
     apply_pitch_moment_distribution,
     apply_roll_load_transfer,
-    apply_yaw_moment_from_trucks,
+    calculate_yaw_moment,
     check_for_derail,
 )
 from source.simulation.constants import DERAIL_THRESHOLD, GRAVITY
@@ -70,6 +70,39 @@ def test_negative_force_goes_backwards(yard, straight_car_state):
 
     for truck_state in straight_car_state.trucks:
         assert truck_state.truck_position.distance_along > 0.0
+
+
+def test_negative_force_moves_car_backwards(yard, straight_car_state):
+    starting_positions = []
+
+    for truck_state in straight_car_state.trucks:
+        truck_state.truck_position = TrackPosition(
+            track_id="t1",
+            distance_along=10.0,
+        )
+        starting_positions.append(truck_state.truck_position.distance_along)
+
+    straight_car_state.longitudinal_force = -1000.0
+
+    update_rolling_stock_state(
+        yard,
+        straight_car_state,
+        dt=1.0,
+    )
+
+    assert straight_car_state.acceleration < 0.0
+    assert straight_car_state.velocity < 0.0
+
+    for truck_state, starting_position in zip(
+        straight_car_state.trucks,
+        starting_positions,
+        strict=True,
+    ):
+        assert isinstance(
+            truck_state.truck_position,
+            TrackPosition,
+        )
+        assert truck_state.truck_position.distance_along < starting_position
 
 
 def test_rolling_resistance_does_not_start_car(yard, straight_car_state):
@@ -145,7 +178,7 @@ def test_intertruck_swivel_bite_opposes_forward_velocity(yard, curved_car_state)
 
 
 def test_gravity_sets_even_left_right_vertical_load(yard, straight_car_state):
-    apply_gravity_forces(yard, straight_car_state)
+    apply_gravity_and_static_loads(yard, straight_car_state)
 
     for truck_state in straight_car_state.trucks:
         assert truck_state.vertical_force > 0.0
@@ -215,7 +248,7 @@ def test_yaw_moment_is_created_by_lateral_force_at_offset(straight_car_state):
     front.lateral_force = 10.0
     rear.lateral_force = 0.0
 
-    apply_yaw_moment_from_trucks(straight_car_state)
+    calculate_yaw_moment(straight_car_state)
 
     assert straight_car_state.yaw_moment != 0.0
 
@@ -224,6 +257,6 @@ def test_equal_lateral_forces_on_symmetric_trucks_create_no_yaw(straight_car_sta
     for truck_state in straight_car_state.trucks:
         truck_state.lateral_force = 10.0
 
-    apply_yaw_moment_from_trucks(straight_car_state)
+    calculate_yaw_moment(straight_car_state)
 
     assert isclose(straight_car_state.yaw_moment, 0.0, abs_tol=0.000001)
