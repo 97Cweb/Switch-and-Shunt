@@ -10,10 +10,11 @@ class Truck:
     wheel_diameter: Float
     axle_spacing: Float
     axle_count: int
-    is_powered: bool
+    
     rolling_resistance_per_axle: Float
 
     max_swivel_angle: Float
+    is_powered: bool = False
 
     def __post_init__(self):
         if self.wheel_diameter <= 0.0:
